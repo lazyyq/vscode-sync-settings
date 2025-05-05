@@ -116,6 +116,23 @@
 		}
 	},
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "syncSettings",
+					"title": "Sync Settings",
+					"icon": "resources/icon-dark.svg"
+				}
+			]
+		},
+		"views": {
+			"syncSettings": [
+				{
+					"id": "syncSettingsCommands",
+					"name": "Commands"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "syncSettings.createProfile",

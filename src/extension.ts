@@ -21,7 +21,66 @@ import { Logger } from './utils/logger.js';
 
 const VERSION_KEY = 'version';
 
-async function showWhatsNewMessage(version: string) { // {{{
+// Command item type for the tree view
+type CommandItem = {
+	label: string;
+	command: string;
+	description?: string;
+	icon?: string;
+};
+
+// TreeDataProvider for commands view
+class CommandsViewProvider implements vscode.TreeDataProvider<CommandItem> {
+	private readonly _onDidChangeTreeData: vscode.EventEmitter<CommandItem | undefined | null | void> = new vscode.EventEmitter<CommandItem | undefined | null | void>();
+	readonly onDidChangeTreeData: vscode.Event<CommandItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
+	private readonly commands: CommandItem[] = [
+		{ label: 'Create a new profile', command: 'syncSettings.createProfile', description: 'Create a new profile', icon: 'add' },
+		{ label: 'Delete a profile', command: 'syncSettings.deleteProfile', description: 'Delete a profile', icon: 'trash' },
+		{ label: 'Download (repository -> user)', command: 'syncSettings.download', description: 'Download (repository -> user)', icon: 'cloud-download' },
+		{ label: 'List the missing extensions', command: 'syncSettings.listMissingExtensions', description: 'List the missing extensions', icon: 'extensions' },
+		{ label: 'Reveal the profile in the file explorer', command: 'syncSettings.openProfileDirectory', description: 'Reveal the profile in the file explorer', icon: 'folder-opened' },
+		{ label: 'Open the profile settings', command: 'syncSettings.openProfileSettings', description: 'Open the profile settings', icon: 'gear' },
+		{ label: 'Reveal the repository in the file explorer', command: 'syncSettings.openRepositoryDirectory', description: 'Reveal the repository in the file explorer', icon: 'repo' },
+		{ label: 'Open the repository settings', command: 'syncSettings.openSettings', description: 'Open the repository settings', icon: 'settings-gear' },
+		{ label: 'Remove all settings and extensions', command: 'syncSettings.reset', description: 'Remove all settings and extensions', icon: 'clear-all' },
+		{ label: 'Prompt if a difference between actual and saved settings is found', command: 'syncSettings.review', description: 'Prompt if a difference between actual and saved settings is found', icon: 'eye' },
+		{ label: 'Switch to profile', command: 'syncSettings.switchProfile', description: 'Switch to profile', icon: 'arrow-swap' },
+		{ label: 'Upload (user -> repository)', command: 'syncSettings.upload', description: 'Upload (user -> repository)', icon: 'cloud-upload' },
+		{ label: 'View differences between actual and saved settings', command: 'syncSettings.viewDifferences', description: 'View differences between actual and saved settings', icon: 'diff' },
+	];
+
+	refresh(): void {
+		this._onDidChangeTreeData.fire();
+	}
+
+	getTreeItem(element: CommandItem): vscode.TreeItem {
+		const treeItem = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
+
+		// Set icon
+		treeItem.iconPath = new vscode.ThemeIcon(element.icon ?? 'play');
+
+		// Add description to tooltip
+		treeItem.tooltip = element.description;
+
+		// Configure command execution
+		treeItem.command = {
+			command: element.command,
+			title: element.label,
+		};
+
+		// Set context value for button styling
+		treeItem.contextValue = 'button';
+
+		return treeItem;
+	}
+
+	getChildren(): CommandItem[] {
+		return this.commands;
+	}
+}
+
+async function showWhatsNewMessage(version: string) {
 	const actions: vscode.MessageItem[] = [{
 		title: 'Homepage',
 	}, {
@@ -47,7 +106,7 @@ async function showWhatsNewMessage(version: string) { // {{{
 			);
 		}
 	}
-} // }}}
+}
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	context.globalState.setKeysForSync([VERSION_KEY]);
@@ -98,6 +157,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand('syncSettings.switchProfile', switchProfile),
 		vscode.commands.registerCommand('syncSettings.upload', upload),
 		vscode.commands.registerCommand('syncSettings.viewDifferences', viewDifferences),
+	);
+
+	// Register the commands view provider
+	const commandsProvider = new CommandsViewProvider();
+	disposables.push(
+		vscode.window.registerTreeDataProvider('syncSettingsCommands', commandsProvider),
 	);
 
 	const settings = Settings.get();
