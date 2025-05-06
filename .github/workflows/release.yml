@@ -28,6 +28,8 @@ jobs:
 
       - name: Build VSIX package
         run: vsce package
+      - name: Get Short Commit SHA
+        run: echo "SHORT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
@@ -36,8 +38,8 @@ jobs:
           artifacts: "*.vsix"
           # GITHUB_TOKEN is provided automatically
           token: ${{ secrets.GITHUB_TOKEN }}
-          # Use the pushed tag as the release tag
-          tag: ${{ github.ref_name }}
+          # Use the short commit hash as the release tag.
+          tag: ${{ env.SHORT_SHA }}
           # Use the notes fetched from the changelog script as the release body
           body: ${{ steps.changelog.outputs.notes }}
           # Make this release the 'Latest' release
